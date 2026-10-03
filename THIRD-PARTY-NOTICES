@@ -26,11 +26,11 @@ Node.js, npm and Windows are also external prerequisites and not redistributed.
 
 ## Distributed npm runtime components
 
-The formal tgz bundles ajv 8.20.0 (MIT), fast-deep-equal 3.1.3 (MIT),
+The Host-vendored runtime archive bundles ajv 8.20.0 (MIT), fast-deep-equal 3.1.3 (MIT),
 fast-uri 3.1.8 (BSD-3-Clause), json-schema-traverse 1.0.0 (MIT), and
 require-from-string 2.0.2 (MIT). Complete licenses are retained alongside
 each bundled package and reproduced below. Build/test dependencies are not
-distributed in the formal runtime tgz.
+distributed in that runtime archive.
 
 ## ajv 8.20.0 — MIT
 

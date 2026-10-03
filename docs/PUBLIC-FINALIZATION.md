@@ -1,35 +1,37 @@
-# Public source finalization
+# Current public state
 
-Repository URL assigned: https://github.com/W-SING-HUNG/Eremite-PDF-Tools-Core
+This [public source repository](https://github.com/W-SING-HUNG/Eremite-PDF-Tools-Core) provides version **1.0.0-rc5 (prerelease)**.
+The [source tag](https://github.com/W-SING-HUNG/Eremite-PDF-Tools-Core/tree/v1.0.0-rc5) identifies the source tree.
+No npm package has been published; `private: true` prevents accidental npm
+publication and does not describe repository visibility.
 
-This source-first project is version 1.0.0-rc5 (prerelease). Canonical source
-metadata is resolved. Source version identity does not assert GitHub Release,
-tag creation or npm publication. `private: true` prevents accidental npm publish
-and does not describe repository visibility.
+## Supported baseline
 
-## Approved attribution
+Windows x64, Node.js >=24 <25 and external qpdf exactly 12.4.0 on PATH.
 
-Status: CLOSED — COPYRIGHT_FINALIZED. The product owner personally approved
-Copyright 2026 翁成航 (Chenghang Weng).
+Host owns UI, policy, authorization, workspace isolation, routing, validation,
+persistence, File Lifecycle and Run History. Supplier Core only provides
+headless capability. See the [README](../README.md) for capabilities and protocol.
 
-- Root NOTICE: exact approved copyright line and project name.
-- README.md: approved copyright line in the existing licensing paragraph.
-- This checklist: attribution completed; no owner input remains outstanding.
+## Source and runtime archives
 
-The standard Apache LICENSE and third-party attribution remain unchanged.
+Eremite Host vendors a separately packaged, fixed Supplier runtime archive.
+The source tag is not a runtime tgz. A local rebuild creates a new artifact;
+it does not replace the Host archive or establish matching bytes.
+Source documentation updates do not update the fixed archive.
 
-## Security
+The runtime archive contains ajv and its four npm dependencies.
+qpdf and Microsoft VC runtime are external prerequisites, not bundled.
 
-Status: CLOSED — SECURITY_CHANNEL_ENABLED. GitHub Private Vulnerability
-Reporting is enabled and was verified with the official GET endpoint.
-SECURITY.md links only to this repository's own reporting page, requires
-sanitized synthetic reproduction and excludes sensitive data from public Issues.
-No response SLA or external security email is claimed.
+## Security, support and license
 
-## Source / artifact boundary
+GitHub Private Vulnerability Reporting is enabled. Use this repository's
+[private reporting page](https://github.com/W-SING-HUNG/Eremite-PDF-Tools-Core/security/advisories/new)
+for vulnerabilities; ordinary bugs and usage questions go to GitHub Issues.
 
-This is a source root with metadata/documentation overlays. Runtime source,
-contracts, capabilities and dependency resolutions are unchanged. Accepted
-Supplier archives in the Host remain byte-identical and are not repacked here.
-Source metadata finalization does not replace accepted artifact hashes; any
-later artifact rebuilding and acceptance require a separate explicit step.
+See [SECURITY.md](../SECURITY.md), [SUPPORT.md](../SUPPORT.md) and
+[CONTRIBUTING.md](../CONTRIBUTING.md). No response or resolution time is promised.
+
+Supplier-owned source is [Apache-2.0](../LICENSE).
+Copyright 2026 翁成航 (Chenghang Weng). Attribution is in [NOTICE](../NOTICE);
+third-party components retain their own licenses and notices.

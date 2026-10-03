@@ -1,0 +1,72 @@
+name: Bug report or usage question
+description: Report a reproducible problem or ask about supported usage.
+title: ""
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue is public. Never include secrets, API keys, credentials, real databases, private documents or unsanitized files/logs.
+        For security vulnerabilities, use [Private Vulnerability Reporting](https://github.com/W-SING-HUNG/Eremite-PDF-Tools-Core/security/advisories/new).
+        Use synthetic test data. For a usage question, describe the steps you tried and the result you need.
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Include the application or Supplier version and commit when available.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      description: Include Windows version and architecture.
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      description: Output of node --version.
+    validations:
+      required: true
+  - type: input
+    id: engines
+    attributes:
+      label: External engine versions
+      description: If relevant, include Pandoc, LibreOffice or qpdf versions and the Supplier version used by Host.
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction / steps tried
+      description: Give the smallest reproducible example using synthetic data.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Remove secrets, private paths and document contents. If no logs are available, state that.
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Public report safety
+      options:
+        - label: I used synthetic data and removed secrets and sensitive information from this report.
+          required: true
+        - label: This report does not disclose a security vulnerability.
+          required: true

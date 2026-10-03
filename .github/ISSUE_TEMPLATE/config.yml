@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/W-SING-HUNG/Eremite-PDF-Tools-Core/security/advisories/new
+    about: Do not post security details in public Issues. Use Private Vulnerability Reporting and synthetic, sanitized reproductions.
+  - name: Usage and support
+    url: https://github.com/W-SING-HUNG/Eremite-PDF-Tools-Core/blob/main/SUPPORT.md
+    about: Read the support guidance before opening a bug or usage question.

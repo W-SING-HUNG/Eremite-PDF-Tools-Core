@@ -20,10 +20,11 @@ The standard Apache LICENSE and third-party attribution remain unchanged.
 
 ## Security
 
-Status: BLOCKED_PENDING_PUBLIC_REPO_SECURITY_CHANNEL. After the repository
-is made public in a separately authorized step, enable GitHub Private
-Vulnerability Reporting, verify it and insert its actual usable link in
-SECURITY.md. No reporting URL is fabricated while the repository is PRIVATE.
+Status: CLOSED — SECURITY_CHANNEL_ENABLED. GitHub Private Vulnerability
+Reporting is enabled and was verified with the official GET endpoint.
+SECURITY.md links only to this repository's own reporting page, requires
+sanitized synthetic reproduction and excludes sensitive data from public Issues.
+No response SLA or external security email is claimed.
 
 ## Source / artifact boundary
 

@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+
+# Package artifacts
+*.tgz
+
+# Logs
+logs/
+*.log
+
+# Test residue / scratch (should never persist)
+tests/.tmp/
+.tmp/
+TEMP/
+staging/
+scratch/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# Vite cache
+.vite/
+.vitest/
+
+# Local preparation and acceptance output is excluded from source publication.
+.release-evidence/
+.qa/
+.cache/

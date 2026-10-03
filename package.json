@@ -1,0 +1,58 @@
+{
+  "name": "pdf-tools-core",
+  "version": "1.0.0-rc5",
+  "description": "Local PDF page-processing Supplier Protocol v1 core: merge, split, extract, rotate and reorder. Requires external qpdf 12.4.0 on PATH.",
+  "type": "module",
+  "private": true,
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "bin": {
+    "pdf-tools-core": "./dist/cli/cli.js"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "schema",
+    "README.md",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build:release": "node scripts/build-release.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1"
+  },
+  "bundleDependencies": [
+    "ajv"
+  ],
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "keywords": [
+    "pdf",
+    "qpdf",
+    "supplier-protocol",
+    "windows"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/W-SING-HUNG/Eremite-PDF-Tools-Core"
+  },
+  "homepage": "https://github.com/W-SING-HUNG/Eremite-PDF-Tools-Core",
+  "bugs": {
+    "url": "https://github.com/W-SING-HUNG/Eremite-PDF-Tools-Core/issues"
+  }
+}

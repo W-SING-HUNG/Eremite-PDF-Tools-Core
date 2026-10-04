@@ -20,6 +20,13 @@ Use a separate branch and submit a Pull Request with the problem, resulting
 behavior, compatibility impact and the checks actually run. Report skips and
 missing prerequisites explicitly.
 
+## CI
+
+[GitHub Actions CI](.github/workflows/ci.yml) runs automatically for PRs targeting
+`main` and pushes to `main`. Before submitting, still run `npm.cmd run typecheck`,
+`npm.cmd run build` and `npm.cmd test` locally with external qpdf exactly 12.4.0.
+Resolve CI failures; never lower validators, contracts or tests to bypass them.
+
 ## Tests and contract compatibility
 
 Use synthetic test data only, in isolated temporary workspaces. Never use private

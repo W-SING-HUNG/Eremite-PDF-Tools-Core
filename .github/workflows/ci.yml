@@ -1,0 +1,101 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+defaults:
+  run:
+    shell: pwsh
+jobs:
+  verify:
+    name: Verify
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: "Set up Node.js"
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24.15.0"
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: "Verify Node.js version"
+        run: |
+          $nodeVersion = node --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Output $nodeVersion
+          npm.cmd --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($nodeVersion -cne 'v24.15.0') { throw 'Node.js 24.15.0 is required' }
+      - name: "Provision official qpdf 12.4.0"
+        run: |
+          $qpdfRoot = Join-Path $env:RUNNER_TEMP 'eremite-ci-qpdf'
+          New-Item -ItemType Directory -Path $qpdfRoot -ErrorAction Stop | Out-Null
+          $archive = Join-Path $qpdfRoot 'qpdf-12.4.0-msvc64.zip'
+          Invoke-WebRequest -Uri 'https://github.com/qpdf/qpdf/releases/download/v12.4.0/qpdf-12.4.0-msvc64.zip' -OutFile $archive
+          $digest = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($digest -cne '5bcb25353f7e6df92b5625dbcfe52a5c34a2a5fba2d1a8b98b8a6a0972c3ff72') { throw 'qpdf asset SHA-256 mismatch' }
+          Expand-Archive -LiteralPath $archive -DestinationPath (Join-Path $qpdfRoot 'runtime')
+          $executables = @(Get-ChildItem -LiteralPath (Join-Path $qpdfRoot 'runtime') -Filter qpdf.exe -File -Recurse)
+          if ($executables.Count -ne 1) { throw 'Expected exactly one official qpdf executable' }
+          $executables[0].DirectoryName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: "Verify qpdf version"
+        run: |
+          $qpdfOutput = @(qpdf --version)
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $qpdfOutput | Write-Output
+          if ($qpdfOutput.Count -eq 0 -or $qpdfOutput[0] -cne 'qpdf version 12.4.0') { throw 'qpdf exactly 12.4.0 is required' }
+      - name: "Install locked dependencies"
+        run: |
+          npm.cmd ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git diff --exit-code -- package-lock.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Typecheck
+        run: |
+          npm.cmd run typecheck
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build
+        run: |
+          npm.cmd run build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Test
+        run: |
+          npm.cmd test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: "Inspect package file list"
+        run: |
+          npm.cmd pack --dry-run
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: "Verify tracked source is unchanged"
+        run: |
+          git diff --exit-code -- package-lock.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git diff --exit-code
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: "Clean runner temporary files"
+        if: "always()"
+        run: |
+          $temporaryRoot = [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+          $targets = @((Join-Path $env:RUNNER_TEMP 'eremite-ci-qpdf'))
+          foreach ($target in $targets) {
+            $absolute = [IO.Path]::GetFullPath($target)
+            if (-not $absolute.StartsWith($temporaryRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Cleanup target outside runner temp' }
+            if (Test-Path -LiteralPath $absolute) {
+              if (@(Get-ChildItem -LiteralPath $absolute -Recurse -Force -Attributes ReparsePoint).Count -ne 0) { throw 'Refuse redirected cleanup target' }
+              Remove-Item -LiteralPath $absolute -Recurse -Force -ErrorAction Stop
+            }
+          }

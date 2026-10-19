@@ -1,0 +1,78 @@
+import assert from "node:assert/strict";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { scanPublicText, checkPublicExposure } from "../scripts/check-public-exposure.mjs";
+
+const scan = text => scanPublicText("docs/release.md", text);
+assert.ok(scan("Validation performed by Qoder").some(x => x.rule === "development-tool"));
+assert.ok(scan("Local Codex results").some(x => x.rule === "development-tool"));
+assert.ok(scan(["C:", "Users", "example-user", "private.txt"].join("/")).some(x => x.rule === "private-path"));
+assert.ok(scan(JSON.stringify(["D:", "Users", "example-user", "private.txt"].join("\\"))).some(x => x.rule === "private-path"), "serialized Windows paths are checked");
+assert.ok(scan("Eremite-internal and docs/evidence/report.md").some(x => x.rule === "internal-reference"));
+const token = "ghp_" + "Ab12Cd34".repeat(5);
+assert.ok(scan(token).some(x => x.rule === "credential"));
+assert.ok(scan(["-----BEGIN", "PRIVATE KEY-----"].join(" ")).some(x => x.rule === "credential"));
+assert.ok(scan(["private-person", "mailhost.com"].join("@")).some(x => x.rule === "personal-email"));
+assert.deepEqual(scan("OpenAI-compatible AI Provider, AI SDK, local model, API key in Windows Credential Manager; Apache-2.0, React, PostCSS and agent-loop restrictions."), []);
+assert.deepEqual(scan("C:/Program Files/LibreOffice and C:/Windows; synthetic@example.com; project@local.invalid; noreply@github.com"), []);
+assert.deepEqual(scanPublicText("NOTICE", "Copyright Example Author <" + ["author", "upstream.org"].join("@") + ">"), []);
+assert.deepEqual(scanPublicText("THIRD-PARTY-NOTICES.md", "Codex component attribution, Apache-2.0"), []);
+assert.deepEqual(scanPublicText("package.json", '  "@openai/codex": "1.0.0",'), []);
+assert.deepEqual(scanPublicText("package-lock.json", '  "resolved": "https://registry.npmjs.org/@openai/codex/-/codex-1.0.0.tgz",'), []);
+assert.deepEqual(scanPublicText("src/settings.ts", 'modelId: "example-codex",'), []);
+assert.ok(scanPublicText("package.json", '"description": "Validated by Codex"').some(x => x.rule === "development-tool"));
+assert.ok(scanPublicText("NOTICE", token).some(x => x.rule === "credential"), "legal notices never exempt credentials");
+
+const root = mkdtempSync(path.join(tmpdir(), "eremite-public-exposure-"));
+const env = { ...process.env, GIT_CONFIG_GLOBAL: process.platform === "win32" ? "NUL" : "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
+for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES"]) delete env[key];
+function git(...args) { const r = spawnSync("git", args, { cwd: root, env, windowsHide: true, encoding: "utf8" }); assert.equal(r.status, 0, r.stderr); return r.stdout.trim(); }
+try {
+  git("init", "-b", "main"); git("config", "user.name", "Fixture Author"); git("config", "user.email", "fixture-author@users.noreply.github.com"); git("config", "user.useConfigOnly", "true");
+  writeFileSync(path.join(root, "release.md"), "Supported AI Provider and third-party notices.\n");
+  git("add", "--", "release.md"); git("commit", "-m", "Initial synthetic fixture"); const base = git("rev-parse", "HEAD");
+  writeFileSync(path.join(root, "release.md"), "Release version and support boundaries.\n"); git("add", "--", "release.md"); git("commit", "-m", "release: prepare source version");
+  assert.equal(checkPublicExposure({ cwd: root, base }).findings.length, 0, "normal privacy-email release commits pass");
+  writeFileSync(path.join(root, "release.md"), token + "\n"); git("add", "--", "release.md");
+  writeFileSync(path.join(root, "release.md"), "Clean worktree text.\n");
+  assert.equal(checkPublicExposure({ cwd: root }).findings.length, 0);
+  const staged = checkPublicExposure({ cwd: root, staged: true }); assert.ok(staged.findings.some(x => x.rule === "credential"));
+  assert.ok(!JSON.stringify(staged).includes(token), "diagnostics must not repeat secrets");
+  git("add", "--", "release.md"); git("commit", "-m", "Codex local validation");
+  assert.ok(checkPublicExposure({ cwd: root, base }).findings.some(x => x.rule === "development-tool"), "new commit messages are covered");
+  git("config", "user.email", ["private-person", "mailhost.com"].join("@"));
+  writeFileSync(path.join(root, "release.md"), "Still clean.\n"); git("add", "--", "release.md"); git("commit", "-m", "Synthetic author check");
+  assert.ok(checkPublicExposure({ cwd: root, base }).findings.some(x => x.rule === "personal-email"), "new author metadata is covered");
+  const privateIdentity = checkPublicExposure({ cwd: root, base }).findings.filter(x => x.rule === "commit-identity");
+  assert.ok(privateIdentity.some(x => x.role === "author") && privateIdentity.some(x => x.role === "committer"), "both private identity fields reject");
+  writeFileSync(path.join(root, "review.md"), "Qoder validation\n");
+  assert.ok(checkPublicExposure({ cwd: root, textFiles: [path.join(root, "review.md")] }).findings.some(x => x.rule === "development-tool"));
+  assert.equal(checkPublicExposure({ cwd: root }).findings.length, 0, "untracked private QA is not exported or scanned as public source");
+  const eventPath = path.join(root, "event.json"), current = git("rev-parse", "HEAD");
+  const cli = fileURLToPath(new URL("../scripts/check-public-exposure.mjs", import.meta.url));
+  const event = { pull_request: { title: "Codex results", body: "Synthetic metadata", base: { sha: current }, head: { sha: current } } };
+  writeFileSync(eventPath, JSON.stringify(event));
+  const cliEnv = { ...env, GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "pull_request", GITHUB_EVENT_PATH: eventPath };
+  const rejected = spawnSync(process.execPath, [cli], { cwd: root, env: cliEnv, windowsHide: true, encoding: "utf8" });
+  assert.equal(rejected.status, 1); assert.match(rejected.stderr, /pull request metadata/u); assert.doesNotMatch(rejected.stderr, /Codex results/u);
+  event.pull_request.title = "Supported AI Provider validation"; writeFileSync(eventPath, JSON.stringify(event));
+  const accepted = spawnSync(process.execPath, [cli], { cwd: root, env: cliEnv, windowsHide: true, encoding: "utf8" });
+  assert.equal(accepted.status, 0, "CI checks current metadata without treating old history as a new commit");
+  event.pull_request.base.sha = base; writeFileSync(eventPath, JSON.stringify(event));
+  const privateCommit = spawnSync(process.execPath, [cli], { cwd: root, env: cliEnv, windowsHide: true, encoding: "utf8" });
+  assert.equal(privateCommit.status, 1); assert.match(privateCommit.stderr, /commit-identity/u); assert.doesNotMatch(privateCommit.stderr, /mailhost\.com/u);
+  writeFileSync(path.join(root, "transient.txt"), token); git("add", "--", "transient.txt"); git("commit", "-m", "Synthetic transient content");
+  writeFileSync(path.join(root, "transient.txt"), "Clean final snapshot."); git("add", "--", "transient.txt"); git("commit", "-m", "Synthetic final snapshot");
+  assert.ok(checkPublicExposure({ cwd: root, base }).findings.some(x => x.rule === "credential"), "transient secrets in new commits remain blocked after final snapshot cleanup");
+  assert.ok(checkPublicExposure({ cwd: root, base: "0".repeat(40) }).findings.some(x => x.rule === "commit-identity"), "a new-branch event cannot silently skip identity inspection");
+  writeFileSync(path.join(root, "leak.sqlite"), "SQLite format 3\0synthetic"); git("add", "--", "leak.sqlite");
+  assert.ok(checkPublicExposure({ cwd: root, staged: true }).findings.some(x => x.rule === "database-payload"));
+  console.log("Public exposure regression passed: staged bytes, new messages/authors and submitted metadata reject; legal attribution, supported AI and synthetic addresses remain allowed; diagnostics redact values.");
+} finally {
+  assert.ok(path.resolve(root).startsWith(path.resolve(tmpdir()) + path.sep));
+  assert.ok(path.basename(root).startsWith("eremite-public-exposure-"));
+  rmSync(root, { recursive: true, force: true });
+}

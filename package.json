@@ -28,7 +28,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build:release": "node scripts/build-release.mjs"
+    "build:release": "node scripts/build-release.mjs",
+    "check:public-exposure": "node scripts/check-public-exposure.mjs --include-untracked",
+    "check:public-delivery": "node scripts/check-public-exposure.mjs --staged --check-identity",
+    "test:public-exposure": "node tests/public-exposure.test.mjs && node tests/public-bytes.test.mjs",
+    "verify": "npm run check:public-exposure && npm run test:public-exposure && npm run typecheck && npm run build && npm test"
   },
   "dependencies": {
     "ajv": "^8.17.1"

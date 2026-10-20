@@ -128,6 +128,12 @@ replace the Host artifact automatically. Public source documentation may differ
 from documentation embedded in the fixed Host archive.
 No npm package has been published; `private: true` prevents accidental npm publication.
 
+## Public information checks
+
+Run the verification command and the [public information checks](docs/public-information.md)
+before submitting source or prepared package bytes. License and author attribution
+remain part of the public record.
+
 ## Contributing, support and security
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for tests and protocol compatibility,

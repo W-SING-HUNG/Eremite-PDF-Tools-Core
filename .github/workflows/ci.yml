@@ -6,6 +6,9 @@ on:
   pull_request:
     branches:
       - main
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  release:
+    types: [published, edited]
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,7 +27,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
       - name: "Set up Node.js"
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -58,6 +61,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $qpdfOutput | Write-Output
           if ($qpdfOutput.Count -eq 0 -or $qpdfOutput[0] -cne 'qpdf version 12.4.0') { throw 'qpdf exactly 12.4.0 is required' }
+      - name: "Inspect public source and event metadata"
+        run: |
+          node scripts/check-public-exposure.mjs --include-untracked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/public-exposure.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/public-bytes.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: "Install locked dependencies"
         run: |
           npm.cmd ci
@@ -79,6 +90,16 @@ jobs:
       - name: "Inspect package file list"
         run: |
           npm.cmd pack --dry-run
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: "Inspect prepared package bytes"
+        run: |
+          $packDir = Join-Path $env:RUNNER_TEMP "public-package-check"
+          New-Item -ItemType Directory -Path $packDir -Force | Out-Null
+          npm.cmd run build:release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $archives = @(Get-ChildItem -LiteralPath "." -Filter "pdf-tools-core-*.tgz" -File)
+          if ($archives.Count -ne 1) { throw "Expected one prepared package" }
+          node scripts/check-public-exposure.mjs --extra-file $archives[0].FullName
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: "Verify tracked source is unchanged"
         run: |

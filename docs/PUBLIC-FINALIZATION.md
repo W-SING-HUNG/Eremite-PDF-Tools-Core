@@ -35,3 +35,7 @@ See [SECURITY.md](../SECURITY.md), [SUPPORT.md](../SUPPORT.md) and
 Supplier-owned source is [Apache-2.0](../LICENSE).
 Copyright 2026 翁成航 (Chenghang Weng). Attribution is in [NOTICE](../NOTICE);
 third-party components retain their own licenses and notices.
+
+## Public information boundary
+
+Source and prepared package checks cover new files, staged bytes, encoded text, nested ZIP/TAR archives, proposed metadata and new commit identities. CI preserves the existing build, real-engine and contract gates. Historical Git objects and hosted copies require a separate assessment. See [public information checks](public-information.md).

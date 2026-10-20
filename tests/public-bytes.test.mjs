@@ -69,6 +69,8 @@ assert.ok(!JSON.stringify(scan("bundle.zip", zip("payload", Buffer.from(token)))
 const root = mkdtempSync(path.join(tmpdir(), "public-bytes-"));
 const cli = fileURLToPath(new URL("../scripts/check-public-exposure.mjs", import.meta.url));
 const env = { ...process.env, GIT_CONFIG_GLOBAL: process.platform === "win32" ? "NUL" : "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
+// Fixture subprocesses opt in to synthetic CI event context explicitly.
+for (const key of ["GITHUB_ACTIONS", "GITHUB_EVENT_NAME", "GITHUB_EVENT_PATH"]) delete env[key];
 for (const key of ["GIT_DIR","GIT_WORK_TREE","GIT_INDEX_FILE","GIT_OBJECT_DIRECTORY","GIT_ALTERNATE_OBJECT_DIRECTORIES"]) delete env[key];
 const git = (...args) => { const r = spawnSync("git",args,{cwd:root,env,windowsHide:true,encoding:"utf8"}); assert.equal(r.status,0,r.stderr); };
 try {
